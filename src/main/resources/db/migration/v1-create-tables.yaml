@@ -1,0 +1,357 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: author
+      changes:
+        # Таблица users
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(50)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: password_hash
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(100)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+              - column:
+                  name: full_name
+                  type: VARCHAR(100)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+
+        # Таблица roles
+        - createTable:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(20)
+                  constraints:
+                    unique: true
+                    nullable: false
+
+        # Таблица user_roles
+        - createTable:
+            tableName: user_roles
+            columns:
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_user_roles_user
+                    references: users(id)
+              - column:
+                  name: role_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_user_roles_role
+                    references: roles(id)
+        - addPrimaryKey:
+            tableName: user_roles
+            columnNames: user_id, role_id
+            constraintName: pk_user_roles
+
+  - changeSet:
+      id: 2
+      author: author
+      changes:
+        # Таблица cards
+        - createTable:
+            tableName: cards
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_cards_user
+                    references: users(id)
+              - column:
+                  name: encrypted_pan
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: pan_last4
+                  type: CHAR(4)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: owner_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiry_month
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiry_year
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: balance
+                  type: DECIMAL(19, 2)
+                  defaultValueNumeric: 0.00
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+              - column:
+                  name: deleted_at
+                  type: TIMESTAMP
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+
+        # Добавляем check constraints для cards
+        - sql:
+            sql: |
+              ALTER TABLE cards ADD CONSTRAINT check_cards_expiry_month CHECK (expiry_month BETWEEN 1 AND 12);
+              ALTER TABLE cards ADD CONSTRAINT check_cards_expiry_year CHECK (expiry_year >= 2000);
+              ALTER TABLE cards ADD CONSTRAINT check_cards_balance_non_negative CHECK (balance >= 0);
+              ALTER TABLE cards ADD CONSTRAINT check_cards_status_valid CHECK (status IN ('ACTIVE', 'BLOCKED', 'EXPIRED'));
+
+  - changeSet:
+      id: 3
+      author: author
+      changes:
+        # Таблица transactions
+        - createTable:
+            tableName: transactions
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: from_card_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_transactions_from_card
+                    references: cards(id)
+                    nullable: true
+              - column:
+                  name: to_card_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_transactions_to_card
+                    references: cards(id)
+                    nullable: true
+              - column:
+                  name: amount
+                  type: DECIMAL(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(20)
+                  defaultValue: "TRANSFER"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: "PENDING"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: idempotency_key
+                  type: VARCHAR(100)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: processed_at
+                  type: TIMESTAMP
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+
+        # Check constraints для transactions
+        - sql:
+            sql: |
+              ALTER TABLE transactions ADD CONSTRAINT check_transactions_amount_positive CHECK (amount > 0);
+              ALTER TABLE transactions ADD CONSTRAINT check_transactions_type_valid CHECK (type IN ('TRANSFER', 'DEPOSIT', 'WITHDRAW'));
+              ALTER TABLE transactions ADD CONSTRAINT check_transactions_status_valid CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED'));
+
+  - changeSet:
+      id: 4
+      author: author
+      changes:
+        - createIndex:
+            tableName: cards
+            indexName: idx_cards_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: cards
+            indexName: idx_cards_pan_last4
+            columns:
+              - column:
+                  name: pan_last4
+        - createIndex:
+            tableName: cards
+            indexName: idx_cards_status
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            tableName: cards
+            indexName: idx_cards_deleted_at
+            columns:
+              - column:
+                  name: deleted_at
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_from_card
+            columns:
+              - column:
+                  name: from_card_id
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_to_card
+            columns:
+              - column:
+                  name: to_card_id
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_created_at
+            columns:
+              - column:
+                  name: created_at
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transactions_status
+            columns:
+              - column:
+                  name: status
+
+  - changeSet:
+      id: 5
+      author: author
+      changes:
+        # Начальные данные: роли
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: "ROLE_ADMIN"
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: name
+                  value: "ROLE_USER"
+
+  - changeSet:
+      id: 6
+      author: author
+      changes:
+        # Тестовый пользователь (пароль admin123 закодирован BCrypt)
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: username
+                  value: "admin"
+              - column:
+                  name: password_hash
+                  value: "$2a$10$XURPShQNCsLjp1ESc2laoObo9QZDhxz73hJPaEv7/cBha4pk0AgP."
+              - column:
+                  name: email
+                  value: "admin@example.com"
+              - column:
+                  name: enabled
+                  valueBoolean: true
+              - column:
+                  name: full_name
+                  value: "Admin User"
+        # роли
+        - insert:
+            tableName: user_roles
+            columns:
+              - column:
+                  name: user_id
+                  valueComputed: (SELECT id FROM users WHERE username = 'admin')
+              - column:
+                  name: role_id
+                  valueComputed: (SELECT id FROM roles WHERE name = 'ROLE_ADMIN')
+        - insert:
+            tableName: user_roles
+            columns:
+              - column:
+                  name: user_id
+                  valueComputed: (SELECT id FROM users WHERE username = 'admin')
+              - column:
+                  name: role_id
+                  valueComputed: (SELECT id FROM roles WHERE name = 'ROLE_USER')
