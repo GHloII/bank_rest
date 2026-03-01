@@ -32,7 +32,7 @@ spring:
 
   # Liquibase migrations
   liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
+    change-log: classpath:db/migration/db.changelog-master.xml
     enabled: true
 
 # JWT configuration
