@@ -21,7 +21,11 @@ public class UserPrincipal implements UserDetails {
 
     public static UserPrincipal create(User user) {
         Collection<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .map(role -> {
+                    String name = role.getName();
+                    String authority = name != null && name.startsWith("ROLE_") ? name : "ROLE_" + name;
+                    return new SimpleGrantedAuthority(authority);
+                })
                 .collect(Collectors.toList());
 
         return new UserPrincipal(
