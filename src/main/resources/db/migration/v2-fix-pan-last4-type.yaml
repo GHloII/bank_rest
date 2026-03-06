@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 7
+      author: author
+      changes:
+        - modifyDataType:
+            tableName: cards
+            columnName: pan_last4
+            newDataType: VARCHAR(4)
