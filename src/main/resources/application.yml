@@ -10,7 +10,7 @@
 # Main Spring Boot configuration file
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   # Database connection
@@ -40,6 +40,10 @@ app:
   jwt:
     secret: ${JWT_SECRET:mySuperSecretKeyForJwtGenerationThatShouldBeAtLeast32CharactersLong}
     expiration: ${JWT_EXPIRATION:86400000}  # 24 hours in ms
+
+  card:
+    crypto:
+      secret: ${CARD_CRYPTO_SECRET:myCardPanEncryptionSecretThatShouldBeAtLeast32CharactersLong}
 
 # Swagger / OpenAPI
 springdoc:

@@ -1,6 +1,11 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.dto.PageResponseDTO;
+import com.example.bankcards.dto.UpdateUserDTO;
+import com.example.bankcards.dto.UserDTO;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.BadRequestException;
+import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,54 +26,70 @@ public class UserService {
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<User> getAllUsers(Pageable pageable) {
+    public PageResponseDTO<UserDTO> getAllUsers(Pageable pageable) {
         log.debug("Admin requested all users");
-        return userRepository.findAll(pageable);
+        Page<User> page = userRepository.findAll(pageable);
+        return toPageDto(page);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<User> searchUsers(String query, Pageable pageable) {
+    public PageResponseDTO<UserDTO> searchUsers(String query, Pageable pageable) {
         log.debug("Admin searching users with query: {}", query);
-        return userRepository.searchUsers(query, pageable);
+        Page<User> page = userRepository.searchUsers(query, pageable);
+        return toPageDto(page);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<User> getUsersByRole(String roleName, Pageable pageable) {
+    public PageResponseDTO<UserDTO> getUsersByRole(String roleName, Pageable pageable) {
         log.debug("Admin requesting users by role: {}", roleName);
-        return userRepository.findByRoleName(roleName, pageable);
+        Page<User> page = userRepository.findByRoleName(roleName, pageable);
+        return toPageDto(page);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public User getCurrentUser() {
+    public UserDTO getCurrentUser() {
         String username = getCurrentUsername();
         log.debug("User {} requested their own profile", username);
-        return userRepository.findByUsernameWithRoles(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        User user = userRepository.findByUsernameWithRoles(username)
+                .orElseThrow(() -> new NotFoundException("User not found: " + username));
+        return toDto(user);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public User getUserById(Long id) {
+    public UserDTO getUserById(Long id) {
         log.debug("Request to get user with id: {}", id);
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
+        return toDto(user);
     }
 
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
-    public User updateUser(Long id, User updatedUser) {
+    public UserDTO updateUser(Long id, UpdateUserDTO updatedUser) {
         log.debug("Admin updating user with id: {}", id);
         User existing = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
-        existing.setEmail(updatedUser.getEmail());
-        existing.setFullName(updatedUser.getFullName());
-        existing.setEnabled(updatedUser.getEnabled());
+        if (updatedUser == null) {
+            throw new BadRequestException("Update payload is required");
+        }
 
-        return userRepository.save(existing);
+        if (updatedUser.getEmail() != null) {
+            existing.setEmail(updatedUser.getEmail());
+        }
+        if (updatedUser.getFullName() != null) {
+            existing.setFullName(updatedUser.getFullName());
+        }
+        if (updatedUser.getEnabled() != null) {
+            existing.setEnabled(updatedUser.getEnabled());
+        }
+
+        User saved = userRepository.save(existing);
+        return toDto(saved);
     }
 
     @Transactional
@@ -76,9 +97,29 @@ public class UserService {
     public void deleteUser(Long id) {
         log.debug("Admin deleting user with id: {}", id);
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with id: " + id);
+            throw new NotFoundException("User not found with id: " + id);
         }
         userRepository.deleteById(id);
+    }
+
+    private PageResponseDTO<UserDTO> toPageDto(Page<User> page) {
+        return PageResponseDTO.of(
+                page.getContent().stream().map(this::toDto).toList(),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()
+        );
+    }
+
+    private UserDTO toDto(User user) {
+        return UserDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .enabled(user.getEnabled())
+                .roles(user.getRoles() == null ? java.util.Set.of() : user.getRoles().stream().map(r -> r.getName()).collect(java.util.stream.Collectors.toSet()))
+                .build();
     }
 
     private String getCurrentUsername() {
