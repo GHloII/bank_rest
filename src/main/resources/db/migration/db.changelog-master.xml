@@ -6,5 +6,6 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <include file="v1-create-tables.yaml" relativeToChangelogFile="true"/>
+    <include file="v2-fix-pan-last4-type.yaml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
