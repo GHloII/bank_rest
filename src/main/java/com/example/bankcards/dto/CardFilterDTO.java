@@ -1,6 +1,7 @@
 package com.example.bankcards.dto;
 
 import com.example.bankcards.entity.CardStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.util.List;
@@ -11,11 +12,17 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CardFilterDTO {
+    @Schema(description = "Filter by card statuses (repeatable)")
     private List<CardStatus> status;
+
+    @Schema(description = "Filter by owner name (substring match)", example = "John")
     private String ownerName;
+
+    @Schema(description = "Page number (0-based)", example = "0")
     @Builder.Default
     private Integer page = 0;
     
+    @Schema(description = "Page size (1..100)", example = "10")
     @Builder.Default
     private Integer size = 10;
     

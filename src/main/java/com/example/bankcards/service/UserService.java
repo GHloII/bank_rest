@@ -1,11 +1,14 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.dto.CreateUserDTO;
 import com.example.bankcards.dto.PageResponseDTO;
 import com.example.bankcards.dto.UpdateUserDTO;
 import com.example.bankcards.dto.UserDTO;
+import com.example.bankcards.entity.Role;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.repository.RoleRepository;
 import com.example.bankcards.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +27,49 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserDTO createUser(CreateUserDTO dto) {
+        log.debug("Admin creating user with username: {}", dto != null ? dto.getUsername() : null);
+
+        if (dto == null) {
+            throw new BadRequestException("Create payload is required");
+        }
+        if (dto.getUsername() == null || dto.getUsername().isBlank()) {
+            throw new BadRequestException("Username is required");
+        }
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new BadRequestException("Password is required");
+        }
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            throw new BadRequestException("Email is required");
+        }
+
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+            throw new BadRequestException("Username already exists");
+        }
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new BadRequestException("Email already exists");
+        }
+
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new NotFoundException("Role not found: ROLE_USER"));
+
+        User user = User.builder()
+                .username(dto.getUsername())
+                .passwordHash(passwordEncoder.encode(dto.getPassword()))
+                .email(dto.getEmail())
+                .fullName(dto.getFullName())
+                .enabled(true)
+                .build();
+        user.getRoles().add(userRole);
+
+        User saved = userRepository.save(user);
+        return toDto(saved);
+    }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")

@@ -7,10 +7,12 @@ import com.example.bankcards.dto.PageResponseDTO;
 import com.example.bankcards.dto.UpdateCardDTO;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.ConflictException;
 import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.CardRepository;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.UserPrincipal;
 import com.example.bankcards.util.CardCryptoUtil;
 import com.example.bankcards.util.CardExpiryUtil;
@@ -34,6 +36,7 @@ import java.util.List;
 public class CardService {
 
     private final CardRepository cardRepository;
+    private final UserRepository userRepository;
     private final CardCryptoUtil cardCryptoUtil;
     private final CardExpiryUtil cardExpiryUtil;
 
@@ -44,14 +47,29 @@ public class CardService {
             throw new BadRequestException("userId is required");
         }
 
+        if (dto == null) {
+            throw new BadRequestException("Create payload is required");
+        }
+
         String last4 = cardCryptoUtil.last4(dto.getPan());
         String encryptedPan = cardCryptoUtil.encrypt(dto.getPan());
+
+        String ownerName = dto.getOwnerName();
+        if (ownerName == null || ownerName.isBlank()) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+            if (user.getFullName() != null && !user.getFullName().isBlank()) {
+                ownerName = user.getFullName();
+            } else {
+                ownerName = user.getUsername();
+            }
+        }
 
         Card card = Card.builder()
                 .userId(userId)
                 .encryptedPan(encryptedPan)
                 .panLast4(last4)
-                .ownerName(dto.getOwnerName())
+                .ownerName(ownerName)
                 .expiryMonth(dto.getExpiryMonth())
                 .expiryYear(dto.getExpiryYear())
                 .status(CardStatus.ACTIVE)

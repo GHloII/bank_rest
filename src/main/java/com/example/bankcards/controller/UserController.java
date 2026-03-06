@@ -1,6 +1,7 @@
 package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.PageResponseDTO;
+import com.example.bankcards.dto.CreateUserDTO;
 import com.example.bankcards.dto.UpdateUserDTO;
 import com.example.bankcards.dto.UserDTO;
 import com.example.bankcards.service.UserService;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +23,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+
+    @PostMapping("/admin")
+    @Operation(summary = "Admin: create user")
+    public ResponseEntity<UserDTO> create(@Valid @RequestBody CreateUserDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(dto));
+    }
 
     @GetMapping("/admin")
     @Operation(summary = "Admin: list all users")

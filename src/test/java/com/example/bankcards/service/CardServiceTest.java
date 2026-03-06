@@ -7,10 +7,12 @@ import com.example.bankcards.dto.PageResponseDTO;
 import com.example.bankcards.dto.UpdateCardDTO;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.ConflictException;
 import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.CardRepository;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.UserPrincipal;
 import com.example.bankcards.util.CardCryptoUtil;
 import com.example.bankcards.util.CardExpiryUtil;
@@ -44,6 +46,9 @@ class CardServiceTest {
 
     @Mock
     private CardRepository cardRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private CardCryptoUtil cardCryptoUtil;
@@ -117,6 +122,45 @@ class CardServiceTest {
         assertEquals("John Doe", result.getOwnerName());
         verify(cardRepository).save(any(Card.class));
         verify(cardCryptoUtil).encrypt("1111222233334444");
+    }
+
+    @Test
+    void createCardForUser_MissingOwnerName_AutofillsFromUser() {
+        CreateCardDTO dto = CreateCardDTO.builder()
+                .pan("1111222233334444")
+                .ownerName(null)
+                .expiryMonth(12)
+                .expiryYear(2099)
+                .build();
+
+        when(cardCryptoUtil.last4("1111222233334444")).thenReturn("4444");
+        when(cardCryptoUtil.encrypt("1111222233334444")).thenReturn("enc-pan");
+
+        User user = User.builder()
+                .id(99L)
+                .username("user99")
+                .fullName("John Derived")
+                .email("u99@example.com")
+                .passwordHash("hash")
+                .enabled(true)
+                .build();
+        when(userRepository.findById(99L)).thenReturn(Optional.of(user));
+
+        when(cardRepository.save(any(Card.class))).thenAnswer(inv -> {
+            Card c = inv.getArgument(0);
+            c.setId(2L);
+            c.setPanLast4("4444");
+            return c;
+        });
+        when(cardCryptoUtil.maskLast4("4444")).thenReturn("**** **** **** 4444");
+        when(cardExpiryUtil.isExpired(12, 2099)).thenReturn(false);
+
+        CardDTO result = cardService.createCardForUser(99L, dto);
+
+        assertNotNull(result);
+        assertEquals(2L, result.getId());
+        assertEquals("John Derived", result.getOwnerName());
+        verify(userRepository).findById(99L);
     }
 
     @Test

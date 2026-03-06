@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: '3.0.3'
 info:
   title: Bank Card Management API
   version: "1.0"
@@ -49,7 +49,7 @@ paths:
         - Cards
       summary: Admin - create card for user
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: userId
@@ -89,7 +89,7 @@ paths:
         - Cards
       summary: User - list my cards with filters and pagination
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: status
@@ -137,7 +137,7 @@ paths:
         - Cards
       summary: User - get my card by id
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -171,7 +171,7 @@ paths:
         - Users
       summary: User - get my profile
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -192,7 +192,7 @@ paths:
         - Users
       summary: Admin - list all users
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: page
@@ -233,7 +233,7 @@ paths:
         - Users
       summary: Admin - search users by username/email
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: q
@@ -279,7 +279,7 @@ paths:
         - Users
       summary: Admin - list users by role name
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: roleName
@@ -326,7 +326,7 @@ paths:
         - Users
       summary: Admin - get user by id
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -365,7 +365,7 @@ paths:
         - Users
       summary: Admin - update user (email/fullName/enabled)
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -416,7 +416,7 @@ paths:
         - Users
       summary: Admin - delete user
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -452,7 +452,7 @@ paths:
         - Cards
       summary: User - request card blocking
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -497,49 +497,64 @@ paths:
       tags:
         - Cards
       summary: Admin - search cards with pagination
+      description: All query parameters are optional. If you pass no filters, this endpoint returns ALL cards (paginated).
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: userId
           required: false
+          description: Filter by user id. Omit to search across all users.
           schema:
             type: integer
             format: int64
+          example: 1
         - in: query
           name: status
           required: false
+          description: Filter by card status. Omit to include any status.
           schema:
             $ref: '#/components/schemas/CardStatus'
+          example: ACTIVE
         - in: query
           name: last4
           required: false
+          description: Filter by exact last 4 digits of PAN. Omit to include any.
           schema:
             type: string
             pattern: '^\\d{4}$'
+          example: '4444'
         - in: query
           name: ownerName
           required: false
+          description: Filter by owner name substring (case-insensitive). Omit to include any.
           schema:
             type: string
+          example: 'john'
         - in: query
           name: includeDeleted
           required: false
+
           schema:
             type: boolean
+          example: false
         - in: query
           name: page
           required: false
+
           schema:
             type: integer
             minimum: 0
+          example: 0
         - in: query
           name: size
           required: false
+
           schema:
             type: integer
             minimum: 1
             maximum: 100
+          example: 10
       responses:
         '200':
           description: OK
@@ -566,7 +581,7 @@ paths:
         - Cards
       summary: Admin - update card (ownerName/status)
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -605,7 +620,7 @@ paths:
         - Cards
       summary: Admin - soft delete card
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -635,7 +650,7 @@ paths:
         - Transactions
       summary: User - transfer between own cards
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -674,7 +689,7 @@ paths:
         - Transactions
       summary: User - my transactions history
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: page
@@ -709,7 +724,7 @@ paths:
         - Transactions
       summary: User - my transactions by card
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -812,23 +827,30 @@ components:
       type: object
       required:
         - pan
-        - ownerName
         - expiryMonth
         - expiryYear
       properties:
         pan:
           type: string
           pattern: '^\\d{16}$'
+          description: Primary account number (PAN). 16 digits.
+          example: '1111222233334444'
         ownerName:
           type: string
           maxLength: 100
+          description: Card owner name (optional). If empty, it will be derived from user profile.
+          example: John Doe
         expiryMonth:
           type: integer
           minimum: 1
           maximum: 12
+          description: Expiry month (1..12)
+          example: 12
         expiryYear:
           type: integer
           minimum: 2000
+          description: Expiry year (>= 2000)
+          example: 2099
 
     UpdateCardDTO:
       type: object
