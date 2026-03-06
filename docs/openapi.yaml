@@ -1,1 +1,1007 @@
-# Здесь будет OpenAPI описание всех доступных эндпоинтов и моделей данных.
+openapi: 3.0.3
+info:
+  title: Bank Card Management API
+  version: "1.0"
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: Authentication
+  - name: Cards
+  - name: Transactions
+  - name: Users
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user and return JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /cards/admin:
+    post:
+      tags:
+        - Cards
+      summary: Admin - create card for user
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCardDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /cards/me:
+    get:
+      tags:
+        - Cards
+      summary: User - list my cards with filters and pagination
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: status
+          required: false
+          description: Card status filter (can be repeated)
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CardStatus'
+        - in: query
+          name: ownerName
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageCardDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /cards/me/{cardId}:
+    get:
+      tags:
+        - Cards
+      summary: User - get my card by id
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: cardId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: User - get my profile
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/admin:
+    get:
+      tags:
+        - Users
+      summary: Admin - list all users
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageUserDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/admin/search:
+    get:
+      tags:
+        - Users
+      summary: Admin - search users by username/email
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageUserDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/admin/role:
+    get:
+      tags:
+        - Users
+      summary: Admin - list users by role name
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: roleName
+          required: true
+          schema:
+            type: string
+            example: ROLE_USER
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageUserDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /users/admin/{id}:
+    get:
+      tags:
+        - Users
+      summary: Admin - get user by id
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    patch:
+      tags:
+        - Users
+      summary: Admin - update user (email/fullName/enabled)
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    delete:
+      tags:
+        - Users
+      summary: Admin - delete user
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: No content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /cards/me/{cardId}/block-request:
+    post:
+      tags:
+        - Cards
+      summary: User - request card blocking
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: cardId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDTO'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /cards/admin/search:
+    get:
+      tags:
+        - Cards
+      summary: Admin - search cards with pagination
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: userId
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: status
+          required: false
+          schema:
+            $ref: '#/components/schemas/CardStatus'
+        - in: query
+          name: last4
+          required: false
+          schema:
+            type: string
+            pattern: '^\\d{4}$'
+        - in: query
+          name: ownerName
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: includeDeleted
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageCardDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /cards/admin/{cardId}:
+    patch:
+      tags:
+        - Cards
+      summary: Admin - update card (ownerName/status)
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: cardId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCardDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+    delete:
+      tags:
+        - Cards
+      summary: Admin - soft delete card
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: cardId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: No content
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /transactions/transfer:
+    post:
+      tags:
+        - Transactions
+      summary: User - transfer between own cards
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionDTO'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /transactions/me:
+    get:
+      tags:
+        - Transactions
+      summary: User - my transactions history
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageTransactionDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /transactions/me/card/{cardId}:
+    get:
+      tags:
+        - Transactions
+      summary: User - my transactions by card
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: cardId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageTransactionDTO'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      required:
+        - token
+        - type
+      properties:
+        token:
+          type: string
+        type:
+          type: string
+          example: Bearer
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+
+    CardStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - BLOCKED
+        - EXPIRED
+
+    CreateCardDTO:
+      type: object
+      required:
+        - pan
+        - ownerName
+        - expiryMonth
+        - expiryYear
+      properties:
+        pan:
+          type: string
+          pattern: '^\\d{16}$'
+        ownerName:
+          type: string
+          maxLength: 100
+        expiryMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+        expiryYear:
+          type: integer
+          minimum: 2000
+
+    UpdateCardDTO:
+      type: object
+      properties:
+        ownerName:
+          type: string
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/CardStatus'
+
+    CardDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        panMasked:
+          type: string
+          example: '**** **** **** 1234'
+        ownerName:
+          type: string
+        expiryMonth:
+          type: integer
+        expiryYear:
+          type: integer
+        status:
+          $ref: '#/components/schemas/CardStatus'
+        balance:
+          type: string
+          description: BigDecimal
+          example: '1000.00'
+
+    PageCardDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDTO'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    TransactionType:
+      type: string
+      enum:
+        - TRANSFER
+        - DEPOSIT
+        - WITHDRAW
+
+    TransactionStatus:
+      type: string
+      enum:
+        - PENDING
+        - SUCCESS
+        - FAILED
+
+    TransferDTO:
+      type: object
+      required:
+        - fromCardId
+        - toCardId
+        - amount
+        - idempotencyKey
+      properties:
+        fromCardId:
+          type: integer
+          format: int64
+        toCardId:
+          type: integer
+          format: int64
+        amount:
+          type: string
+          description: BigDecimal
+          example: '10.00'
+        idempotencyKey:
+          type: string
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9_-]+$'
+
+    TransactionDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fromCardId:
+          type: integer
+          format: int64
+        toCardId:
+          type: integer
+          format: int64
+        amount:
+          type: string
+          description: BigDecimal
+          example: '10.00'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        createdAt:
+          type: string
+          format: date-time
+
+    PageTransactionDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionDTO'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    UpdateUserDTO:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        fullName:
+          type: string
+          maxLength: 100
+        enabled:
+          type: boolean
+
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        fullName:
+          type: string
+        enabled:
+          type: boolean
+        roles:
+          type: array
+          items:
+            type: string
+            example: ROLE_USER
+
+    PageUserDTO:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserDTO'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer

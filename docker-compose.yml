@@ -18,8 +18,13 @@ services:
     env_file:
       - .env
 
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -30,13 +35,17 @@ services:
     depends_on:
       - postgres
     ports:
-      - "8080:8080"
+      - "${APP_PORT}:8080"
+    env_file:
+      - .env
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: 8080
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
+      CARD_CRYPTO_SECRET: ${CARD_CRYPTO_SECRET}
     volumes:
       - ./logs:/app/logs
 
