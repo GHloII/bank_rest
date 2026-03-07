@@ -1,105 +1,128 @@
-<h1>🚀 Разработка Системы Управления Банковскими Картами</h1>
+# Система управления банковскими картами
 
-<h2>📁 Стартовая структура</h2>
-  <p>
-    Проектная структура с директориями и описательными файлами (<code>README Controller.md</code>, <code>README Service.md</code> и т.д.) уже подготовлена.<br />
-    Все реализации нужно добавлять <strong>в соответствующие директории</strong>.
-  </p>
-  <p>
-    После завершения разработки <strong>временные README-файлы нужно удалить</strong>, чтобы они не попадали в итоговую сборку.
-  </p>
-  
-<h2>📝 Описание задачи</h2>
-  <p>Разработать backend-приложение на Java (Spring Boot) для управления банковскими картами:</p>
-  <ul>
-    <li>Создание и управление картами</li>
-    <li>Просмотр карт</li>
-    <li>Переводы между своими картами</li>
-  </ul>
+Backend-приложение на Java (Spring Boot) для управления банковскими картами.
 
-<h2>💳 Атрибуты карты</h2>
-  <ul>
-    <li>Номер карты (зашифрован, отображается маской: <code>**** **** **** 1234</code>)</li>
-    <li>Владелец</li>
-    <li>Срок действия</li>
-    <li>Статус: Активна, Заблокирована, Истек срок</li>
-    <li>Баланс</li>
-  </ul>
+## Возможности
 
-<h2>🧾 Требования</h2>
+### Аутентификация и авторизация
+- Spring Security + JWT
+- Роли: `ROLE_ADMIN`, `ROLE_USER`
 
-<h3>✅ Аутентификация и авторизация</h3>
-  <ul>
-    <li>Spring Security + JWT</li>
-    <li>Роли: <code>ADMIN</code> и <code>USER</code></li>
-  </ul>
+### Карты
+- Хранение номера карты (PAN) в БД в зашифрованном виде
+- Отображение PAN только в виде маски: `**** **** **** 1234`
+- Статусы: `ACTIVE`, `BLOCKED`, `EXPIRED`
+- Просмотр своих карт с фильтрацией и пагинацией
+- Админский поиск/управление картами
+- Пользовательский запрос блокировки карты
 
-<h3>✅ Возможности</h3>
-<strong>Администратор:</strong>
-  <ul>
-    <li>Создаёт, блокирует, активирует, удаляет карты</li>
-    <li>Управляет пользователями</li>
-    <li>Видит все карты</li>
-  </ul>
+### Переводы
+- Переводы между своими картами
+- Идемпотентность переводов через `idempotencyKey`
+- История транзакций пользователя и по конкретной карте
 
-<strong>Пользователь:</strong>
-  <ul>
-    <li>Просматривает свои карты (поиск + пагинация)</li>
-    <li>Запрашивает блокировку карты</li>
-    <li>Делает переводы между своими картами</li>
-    <li>Смотрит баланс</li>
-  </ul>
+## Технологии
+- Java 17
+- Spring Boot: Web, Validation, Security, Data JPA
+- PostgreSQL
+- Liquibase
+- JWT (jjwt)
+- Swagger UI (springdoc)
 
-<h3>✅ API</h3>
-  <ul>
-    <li>CRUD для карт</li>
-    <li>Переводы между своими картами</li>
-    <li>Фильтрация и постраничная выдача</li>
-    <li>Валидация и сообщения об ошибках</li>
-  </ul>
+## Конфигурация
 
-<h3>✅ Безопасность</h3>
-  <ul>
-    <li>Шифрование данных</li>
-    <li>Ролевой доступ</li>
-    <li>Маскирование номеров карт</li>
-  </ul>
+Основные настройки находятся в:
+- `src/main/resources/application.yml`
 
-<h3>✅ Работа с БД</h3>
-  <ul>
-    <li>PostgreSQL или MySQL</li>
-    <li>Миграции через Liquibase (<code>src/main/resources/db/migration</code>)</li>
-  </ul>
+### Переменные окружения
 
-<h3>✅ Документация</h3>
-  <ul>
-    <li>Swagger UI / OpenAPI — <code>docs/openapi.yaml</code></li>
-    <li><code>README.md</code> с инструкцией запуска</li>
-  </ul>
+Для запуска через Docker Compose используется файл `.env`.
 
-<h3>✅ Развёртывание и тестирование</h3>
-  <ul>
-    <li>Docker Compose для dev-среды</li>
-    <li>Liquibase миграции</li>
-    <li>Юнит-тесты ключевой бизнес-логики</li>
-  </ul>
+Шаблон:
+- `.env.example` — **скопируй** в `.env` и задай свои значения.
 
-<h2>📊 Оценка</h2>
-  <ul>
-    <li>Соответствие требованиям</li>
-    <li>Чистота архитектуры и кода</li>
-    <li>Безопасность</li>
-    <li>Обработка ошибок</li>
-    <li>Покрытие тестами</li>
-    <li>ООП и уровни абстракции</li>
-  </ul>
+Используемые переменные:
+- `APP_PORT` — порт приложения на хосте
+- `POSTGRES_PORT` — порт PostgreSQL на хосте
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- `DB_URL`, `DB_USER`, `DB_PASSWORD` — параметры datasource для приложения
+- `JWT_SECRET`, `JWT_EXPIRATION`
+- `CARD_CRYPTO_SECRET` — секрет для шифрования PAN
 
-<h2>💡 Технологии</h2>
-  <p>
-    Java 17+, Spring Boot, Spring Security, Spring Data JPA, PostgreSQL/MySQL, Liquibase, Docker, JWT, Swagger (OpenAPI)
-  </p>
+## Запуск (Docker Compose)
 
-<h2> 📤 Формат сдачи</h2>
-<p>
-Весь код и изменения принимаются только через git-репозиторий с открытым доступом к проекту. Отправка файлов в любом виде не принимается.
-  </p>
+### 1) Подготовка `.env`
+
+```bash
+cp .env.example .env
+```
+
+Далее отредактируй `.env`.
+
+### 2) Запуск
+
+```bash
+docker compose up --build
+```
+
+После старта:
+- приложение: `http://localhost:${APP_PORT}` (по умолчанию `8080`)
+- swagger-ui: `http://localhost:${APP_PORT}/swagger-ui/index.html`
+
+## Миграции и тестовые данные
+
+Liquibase применяет миграции автоматически при старте.
+
+В миграциях создаются роли и тестовый пользователь:
+- username: `admin`
+- password: `admin123`
+- roles: `ROLE_ADMIN`, `ROLE_USER`
+
+## Документация API
+
+### Swagger UI
+- `http://localhost:${APP_PORT}/swagger-ui/index.html`
+
+### OpenAPI YAML
+- `http://localhost:${APP_PORT}/docs/openapi.yaml`
+
+## Аутентификация
+
+1) Получить токен:
+- `POST /auth/login`
+
+2) Использовать токен в запросах:
+
+Заголовок:
+- `Authorization: Bearer <token>`
+
+## Основные эндпоинты
+
+### Auth
+- `POST /auth/login`
+
+### Cards
+- `POST /cards/admin?userId=...` (ADMIN)
+- `GET /cards/me` (USER/ADMIN)
+- `GET /cards/me/{cardId}` (USER/ADMIN)
+- `POST /cards/me/{cardId}/block-request` (USER)
+- `GET /cards/admin/search` (ADMIN)
+- `PATCH /cards/admin/{cardId}` (ADMIN)
+- `DELETE /cards/admin/{cardId}` (ADMIN)
+
+### Transactions
+- `POST /transactions` (USER) — пополнение баланса карты (депозит)
+- `POST /transactions/transfer` (USER/ADMIN)
+- `GET /transactions/me` (USER/ADMIN)
+- `GET /transactions/me/card/{cardId}` (USER/ADMIN)
+
+### Users
+- `GET /users/me` (USER/ADMIN)
+- `GET /users/admin` (ADMIN)
+- `GET /users/admin/search` (ADMIN)
+- `GET /users/admin/role` (ADMIN)
+- `GET /users/admin/{id}` (ADMIN)
+- `PATCH /users/admin/{id}` (ADMIN)
+- `DELETE /users/admin/{id}` (ADMIN)
+
+
