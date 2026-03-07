@@ -8,6 +8,7 @@ import com.example.bankcards.entity.Role;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.NotFoundException;
+import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.RoleRepository;
 import com.example.bankcards.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -29,6 +32,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CardRepository cardRepository;
 
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -146,6 +150,13 @@ public class UserService {
         if (!userRepository.existsById(id)) {
             throw new NotFoundException("User not found with id: " + id);
         }
+        
+        // Delete all cards associated with the user first to avoid FK violation
+        List<com.example.bankcards.entity.Card> userCards = cardRepository.findAll().stream()
+                .filter(c -> c.getUserId().equals(id))
+                .toList();
+        cardRepository.deleteAll(userCards);
+        
         userRepository.deleteById(id);
     }
 
