@@ -1,6 +1,6 @@
 package com.example.bankcards.service;
 
-import com.example.bankcards.dto.DepositDTO;
+import com.example.bankcards.dto.TopUpRequestDTO;
 import com.example.bankcards.dto.CardDTO;
 import com.example.bankcards.dto.CardFilterDTO;
 import com.example.bankcards.dto.CreateCardDTO;
@@ -43,9 +43,9 @@ public class CardService {
 
     @Transactional
     @PreAuthorize("hasRole('USER')")
-    public CardDTO deposit(Long cardId, DepositDTO dto) {
+    public CardDTO topUp(TopUpRequestDTO dto) {
         Long userId = getCurrentUserId();
-        Card card = cardRepository.findByIdAndUserId(cardId, userId)
+        Card card = cardRepository.findByIdAndUserId(dto.cardId(), userId)
                 .orElseThrow(() -> new NotFoundException("Card not found"));
 
         if (card.getDeletedAt() != null) {
@@ -62,7 +62,7 @@ public class CardService {
 
         card.setBalance(card.getBalance().add(dto.amount()));
         Card saved = cardRepository.save(card);
-        log.info("Deposited {} to card {} for user {}", dto.amount(), cardId, userId);
+        log.info("Transaction (top-up) of {} to card {} for user {}", dto.amount(), dto.cardId(), userId);
         return toDto(saved);
     }
 

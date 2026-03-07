@@ -1,10 +1,10 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.dto.TopUpRequestDTO;
 import com.example.bankcards.dto.CardDTO;
 import com.example.bankcards.dto.CardFilterDTO;
 import com.example.bankcards.dto.CreateCardDTO;
 import com.example.bankcards.dto.PageResponseDTO;
-import com.example.bankcards.dto.UpdateCardDTO;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.User;
@@ -265,22 +265,20 @@ class CardServiceTest {
     }
 
     @Test
-    void updateCard_AdminUpdate_ChangesOwnerAndStatus() {
-        UpdateCardDTO dto = new UpdateCardDTO(
-                "New",
-                CardStatus.BLOCKED
-        );
+    void topUp_ValidBody_ReturnsOk() {
+        TopUpRequestDTO dto = new TopUpRequestDTO(10L, new BigDecimal("50.00"));
 
-        when(cardRepository.findById(10L)).thenReturn(Optional.of(activeCard));
-        when(cardRepository.save(activeCard)).thenReturn(activeCard);
-        when(cardExpiryUtil.isExpired(activeCard.getExpiryMonth(), activeCard.getExpiryYear())).thenReturn(false);
-        when(cardCryptoUtil.maskLast4("1234")).thenReturn("**** **** **** 1234");
+        when(cardRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(activeCard));
+        when(cardRepository.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(cardExpiryUtil.isExpired(anyInt(), anyInt())).thenReturn(false);
 
-        CardDTO result = cardService.updateCard(10L, dto);
+        try (MockedStatic<SecurityContextHolder> mocked = mockUserContext(1L)) {
+            CardDTO result = cardService.topUp(dto);
 
-        assertEquals("New", result.ownerName());
-        assertEquals(CardStatus.BLOCKED, result.status());
-        verify(cardRepository).save(activeCard);
+            assertNotNull(result);
+            assertEquals(new BigDecimal("150.00"), activeCard.getBalance());
+            verify(cardRepository).save(activeCard);
+        }
     }
 
     @Test

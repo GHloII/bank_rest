@@ -9,8 +9,10 @@ import java.math.BigDecimal;
 import lombok.Builder;
 
 @Builder
-public record DepositDTO(
-    @Schema(description = "Amount to deposit", example = "100.00")
+public record TopUpRequestDTO(
+    @NotNull(message = "Card ID is required")
+    Long cardId,
+    
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be at least 0.01")
     BigDecimal amount

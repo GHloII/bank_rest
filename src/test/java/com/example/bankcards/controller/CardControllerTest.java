@@ -1,9 +1,6 @@
 package com.example.bankcards.controller;
 
-import com.example.bankcards.dto.CardDTO;
-import com.example.bankcards.dto.PageResponseDTO;
-import com.example.bankcards.dto.CreateCardDTO;
-import com.example.bankcards.dto.UpdateCardDTO;
+import com.example.bankcards.dto.*;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.service.CardService;
 import com.example.bankcards.security.CustomUserDetailsService;
@@ -128,6 +125,21 @@ class CardControllerTest {
                 .andExpect(jsonPath("$.id").value(1));
 
         verify(cardService).getMyCardById(1L);
+    }
+
+    @Test
+    void topUp_ValidBody_ReturnsOk() throws Exception {
+        TopUpRequestDTO dto = new TopUpRequestDTO(1L, new BigDecimal("100.00"));
+
+        when(cardService.topUp(any(TopUpRequestDTO.class))).thenReturn(cardDTO);
+
+        mockMvc.perform(post("/cards/me/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+
+        verify(cardService).topUp(any(TopUpRequestDTO.class));
     }
 
     @Test
