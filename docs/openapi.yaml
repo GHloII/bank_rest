@@ -187,6 +187,63 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 
   /users/admin:
+    post:
+      tags:
+        - Users
+      summary: Admin - create user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: password
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: fullName
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: enabled
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
     get:
       tags:
         - Users
@@ -373,12 +430,21 @@ paths:
           schema:
             type: integer
             format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateUserDTO'
+        - in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: fullName
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: enabled
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: OK
@@ -912,21 +978,29 @@ components:
         id:
           type: integer
           format: int64
+          example: 101
         panMasked:
           type: string
+          description: Masked card number showing only last 4 digits.
           example: '**** **** **** 1234'
         ownerName:
           type: string
+          description: Name of the card holder.
+          example: 'John Doe'
         expiryMonth:
           type: integer
+          description: Card expiry month (1-12).
+          example: 12
         expiryYear:
           type: integer
+          description: Card expiry year.
+          example: 2028
         status:
           $ref: '#/components/schemas/CardStatus'
         balance:
           type: string
-          description: BigDecimal
-          example: '1000.00'
+          description: Current balance of the card (BigDecimal).
+          example: '1250.50'
 
     PageCardDTO:
       type: object
@@ -978,9 +1052,11 @@ components:
         cardId:
           type: integer
           format: int64
+          description: ID of the card to top up.
+          example: 101
         amount:
           type: string
-          description: BigDecimal
+          description: Amount to deposit (BigDecimal). Must be at least 0.01.
           example: '100.00'
 
     TransferDTO:
@@ -994,17 +1070,23 @@ components:
         fromCardId:
           type: integer
           format: int64
+          description: Source card ID.
+          example: 101
         toCardId:
           type: integer
           format: int64
+          description: Target card ID.
+          example: 102
         amount:
           type: string
-          description: BigDecimal
-          example: '10.00'
+          description: Amount to transfer (BigDecimal).
+          example: '50.00'
         idempotencyKey:
           type: string
           maxLength: 100
           pattern: '^[a-zA-Z0-9_-]+$'
+          description: Unique key to prevent duplicate transfers.
+          example: 'req-abc-123'
 
     TransactionDTO:
       type: object
@@ -1012,16 +1094,21 @@ components:
         id:
           type: integer
           format: int64
+          example: 501
         fromCardId:
           type: integer
           format: int64
+          description: Source card ID (null for deposits).
+          example: 101
         toCardId:
           type: integer
           format: int64
+          description: Target card ID (null for withdrawals).
+          example: 102
         amount:
           type: string
-          description: BigDecimal
-          example: '10.00'
+          description: Transaction amount (BigDecimal).
+          example: '50.00'
         type:
           $ref: '#/components/schemas/TransactionType'
         status:
@@ -1029,6 +1116,7 @@ components:
         createdAt:
           type: string
           format: date-time
+          example: '2024-03-07T22:00:00Z'
 
     PageTransactionDTO:
       type: object
@@ -1047,6 +1135,41 @@ components:
         totalPages:
           type: integer
 
+    CreateUserDTO:
+      type: object
+      required:
+        - username
+        - password
+        - email
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: Unique username for the user. Only letters, numbers and underscores allowed.
+          example: 'john_doe123'
+        password:
+          type: string
+          minLength: 6
+          description: User password (min 6 characters).
+          example: 'secret123'
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          description: User email address.
+          example: 'john.doe@example.com'
+        fullName:
+          type: string
+          maxLength: 100
+          description: Optional full name of the user.
+          example: 'John Doe'
+        enabled:
+          type: boolean
+          description: Whether the user account is enabled.
+          example: true
+
     UpdateUserDTO:
       type: object
       properties:
@@ -1054,11 +1177,17 @@ components:
           type: string
           format: email
           maxLength: 100
+          description: New email address.
+          example: 'new.email@example.com'
         fullName:
           type: string
           maxLength: 100
+          description: New full name.
+          example: 'John Q. Doe'
         enabled:
           type: boolean
+          description: Set user status (active/inactive).
+          example: true
 
     UserDTO:
       type: object
@@ -1066,14 +1195,19 @@ components:
         id:
           type: integer
           format: int64
+          example: 1
         username:
           type: string
+          example: 'john_doe123'
         email:
           type: string
+          example: 'john.doe@example.com'
         fullName:
           type: string
+          example: 'John Doe'
         enabled:
           type: boolean
+          example: true
         roles:
           type: array
           items:
