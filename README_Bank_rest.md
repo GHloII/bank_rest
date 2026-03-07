@@ -67,7 +67,7 @@ docker compose up --build
 
 После старта:
 - приложение: `http://localhost:${APP_PORT}`
-- swagger-ui: `http://localhost:${APP_PORT}/swagger-ui.html`
+- swagger-ui: `http://localhost:${APP_PORT}/swagger-ui/index.html`
 
 ## Миграции и тестовые данные
 
@@ -81,10 +81,10 @@ Liquibase применяет миграции автоматически при 
 ## Документация API
 
 ### Swagger UI
-- `http://localhost:${APP_PORT}/swagger-ui.html`
+- `http://localhost:${APP_PORT}/swagger-ui/index.html`
 
 ### OpenAPI YAML
-- `docs/openapi.yaml`
+- `http://localhost:${APP_PORT}/docs/openapi.yaml`
 
 ## Аутентификация
 

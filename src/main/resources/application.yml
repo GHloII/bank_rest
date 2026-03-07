@@ -54,3 +54,8 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
     url: /docs/openapi.yaml
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

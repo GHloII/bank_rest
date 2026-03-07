@@ -446,6 +446,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /cards/me/{cardId}/deposit:
+    post:
+      tags:
+        - Cards
+      summary: User - deposit money to card from air
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: cardId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDTO'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /cards/me/{cardId}/block-request:
     post:
       tags:
@@ -913,6 +965,16 @@ components:
         - PENDING
         - SUCCESS
         - FAILED
+
+    DepositDTO:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: string
+          description: BigDecimal. Minimum 0.01.
+          example: '100.00'
 
     TransferDTO:
       type: object
