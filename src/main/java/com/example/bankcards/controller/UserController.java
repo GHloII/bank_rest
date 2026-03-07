@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,7 +26,7 @@ public class UserController {
 
     @PostMapping("/admin")
     @Operation(summary = "Admin: create user")
-    public ResponseEntity<UserDTO> create(@Valid @ParameterObject @ModelAttribute CreateUserDTO dto) {
+    public ResponseEntity<UserDTO> create(@Valid @RequestBody CreateUserDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(dto));
     }
 
@@ -71,7 +70,7 @@ public class UserController {
 
     @PatchMapping("/admin/{id}")
     @Operation(summary = "Admin: update user (email/fullName/enabled)")
-    public ResponseEntity<UserDTO> update(@PathVariable Long id, @Valid @ParameterObject @ModelAttribute UpdateUserDTO dto) {
+    public ResponseEntity<UserDTO> update(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO dto) {
         return ResponseEntity.ok(userService.updateUser(id, dto));
     }
 

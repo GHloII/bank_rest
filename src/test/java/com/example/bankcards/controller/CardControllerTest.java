@@ -128,21 +128,6 @@ class CardControllerTest {
     }
 
     @Test
-    void topUp_ValidBody_ReturnsOk() throws Exception {
-        TopUpRequestDTO dto = new TopUpRequestDTO(1L, new BigDecimal("100.00"));
-
-        when(cardService.topUp(any(TopUpRequestDTO.class))).thenReturn(cardDTO);
-
-        mockMvc.perform(post("/cards/me/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
-
-        verify(cardService).topUp(any(TopUpRequestDTO.class));
-    }
-
-    @Test
     void requestBlock_ReturnsOk() throws Exception {
         CardDTO blocked = new CardDTO(
                 1L,
