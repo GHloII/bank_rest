@@ -7,5 +7,10 @@
 
     <include file="v1-create-tables.yaml" relativeToChangelogFile="true"/>
     <include file="v2-fix-pan-last4-type.yaml" relativeToChangelogFile="true"/>
+    <include file="v3-fix-admin-password-hash.yaml" relativeToChangelogFile="true"/>
+    <include file="v4-fix-cards-owner-name-type.yaml" relativeToChangelogFile="true"/>
+    <include file="v5-fix-cards-owner-name-bytea.yaml" relativeToChangelogFile="true"/>
+    <include file="v6-fix-cards-owner-name-bytea-v2.yaml" relativeToChangelogFile="true"/>
+    <include file="v7-fix-cards-owner-name-bytea-pg-catalog.yaml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

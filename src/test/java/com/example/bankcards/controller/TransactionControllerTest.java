@@ -1,10 +1,10 @@
 package com.example.bankcards.controller;
 
-import com.example.bankcards.dto.PageResponseDTO;
-import com.example.bankcards.dto.TransactionDTO;
-import com.example.bankcards.dto.TransferDTO;
+import com.example.bankcards.dto.*;
+import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.TransactionStatus;
 import com.example.bankcards.entity.TransactionType;
+import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.TransactionService;
 import com.example.bankcards.security.CustomUserDetailsService;
 import com.example.bankcards.security.JwtService;
@@ -51,7 +51,11 @@ class TransactionControllerTest {
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
 
+    @MockBean
+    private CardService cardService;
+
     private TransactionDTO tx;
+    private CardDTO cardDTO;
 
     @BeforeEach
     void setUp() {
@@ -64,6 +68,31 @@ class TransactionControllerTest {
                 .status(TransactionStatus.SUCCESS)
                 .createdAt(LocalDateTime.now())
                 .build();
+
+        cardDTO = new CardDTO(
+                1L,
+                "**** **** **** 1234",
+                "John Doe",
+                12,
+                2099,
+                CardStatus.ACTIVE,
+                new BigDecimal("100.00")
+        );
+    }
+
+    @Test
+    void topUp_ValidBody_ReturnsOk() throws Exception {
+        TopUpRequestDTO dto = new TopUpRequestDTO(1L, new BigDecimal("100.00"));
+
+        when(cardService.topUp(any(TopUpRequestDTO.class))).thenReturn(cardDTO);
+
+        mockMvc.perform(post("/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+
+        verify(cardService).topUp(any(TopUpRequestDTO.class));
     }
 
     @Test

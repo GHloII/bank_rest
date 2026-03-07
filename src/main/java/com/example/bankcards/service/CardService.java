@@ -1,5 +1,6 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.dto.TopUpRequestDTO;
 import com.example.bankcards.dto.CardDTO;
 import com.example.bankcards.dto.CardFilterDTO;
 import com.example.bankcards.dto.CreateCardDTO;
@@ -7,10 +8,12 @@ import com.example.bankcards.dto.PageResponseDTO;
 import com.example.bankcards.dto.UpdateCardDTO;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.ConflictException;
 import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.CardRepository;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.UserPrincipal;
 import com.example.bankcards.util.CardCryptoUtil;
 import com.example.bankcards.util.CardExpiryUtil;
@@ -34,8 +37,34 @@ import java.util.List;
 public class CardService {
 
     private final CardRepository cardRepository;
+    private final UserRepository userRepository;
     private final CardCryptoUtil cardCryptoUtil;
     private final CardExpiryUtil cardExpiryUtil;
+
+    @Transactional
+    @PreAuthorize("hasRole('USER')")
+    public CardDTO topUp(TopUpRequestDTO dto) {
+        Long userId = getCurrentUserId();
+        Card card = cardRepository.findByIdAndUserId(dto.cardId(), userId)
+                .orElseThrow(() -> new NotFoundException("Card not found"));
+
+        if (card.getDeletedAt() != null) {
+            throw new BadRequestException("Card is deleted");
+        }
+
+        applyExpiredIfNeeded(card);
+        if (card.getStatus() == CardStatus.EXPIRED) {
+            throw new ConflictException("Card is expired");
+        }
+        if (card.getStatus() == CardStatus.BLOCKED) {
+            throw new ConflictException("Card is blocked");
+        }
+
+        card.setBalance(card.getBalance().add(dto.amount()));
+        Card saved = cardRepository.save(card);
+        log.info("Transaction (top-up) of {} to card {} for user {}", dto.amount(), dto.cardId(), userId);
+        return toDto(saved);
+    }
 
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -44,16 +73,31 @@ public class CardService {
             throw new BadRequestException("userId is required");
         }
 
-        String last4 = cardCryptoUtil.last4(dto.getPan());
-        String encryptedPan = cardCryptoUtil.encrypt(dto.getPan());
+        if (dto == null) {
+            throw new BadRequestException("Create payload is required");
+        }
+
+        String last4 = cardCryptoUtil.last4(dto.pan());
+        String encryptedPan = cardCryptoUtil.encrypt(dto.pan());
+
+        String ownerName = dto.ownerName();
+        if (ownerName == null || ownerName.isBlank()) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+            if (user.getFullName() != null && !user.getFullName().isBlank()) {
+                ownerName = user.getFullName();
+            } else {
+                ownerName = user.getUsername();
+            }
+        }
 
         Card card = Card.builder()
                 .userId(userId)
                 .encryptedPan(encryptedPan)
                 .panLast4(last4)
-                .ownerName(dto.getOwnerName())
-                .expiryMonth(dto.getExpiryMonth())
-                .expiryYear(dto.getExpiryYear())
+                .ownerName(ownerName)
+                .expiryMonth(dto.expiryMonth())
+                .expiryYear(dto.expiryYear())
                 .status(CardStatus.ACTIVE)
                 .build();
 
@@ -74,7 +118,8 @@ public class CardService {
             status = statuses.get(0);
         }
 
-        Page<Card> page = cardRepository.searchUserCards(userId, status, null, filter != null ? filter.getOwnerName() : null, pageable);
+        String statusStr = status != null ? status.name() : null;
+        Page<Card> page = cardRepository.searchUserCards(userId, statusStr, null, filter != null ? filter.getOwnerName() : null, pageable);
         page.getContent().forEach(this::applyExpiredIfNeeded);
         return PageResponseDTO.of(page.getContent().stream().map(this::toDto).toList(), page.getNumber(), page.getSize(), page.getTotalElements());
     }
@@ -122,7 +167,8 @@ public class CardService {
         Pageable pageable = PageRequest.of(page != null ? Math.max(0, page) : 0, size != null ? Math.min(Math.max(1, size), 100) : 10, Sort.by(Sort.Direction.DESC, "id"));
         boolean incDel = includeDeleted != null && includeDeleted;
 
-        Page<Card> result = cardRepository.searchAdminCards(userId, status, last4, ownerName, incDel, pageable);
+        String statusStr = status != null ? status.name() : null;
+        Page<Card> result = cardRepository.searchAdminCards(userId, statusStr, last4, ownerName, incDel, pageable);
         result.getContent().forEach(this::applyExpiredIfNeeded);
         return PageResponseDTO.of(result.getContent().stream().map(this::toDto).toList(), result.getNumber(), result.getSize(), result.getTotalElements());
     }
@@ -133,11 +179,11 @@ public class CardService {
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new NotFoundException("Card not found"));
 
-        if (dto.getOwnerName() != null) {
-            card.setOwnerName(dto.getOwnerName());
+        if (dto.ownerName() != null) {
+            card.setOwnerName(dto.ownerName());
         }
-        if (dto.getStatus() != null) {
-            card.setStatus(dto.getStatus());
+        if (dto.status() != null) {
+            card.setStatus(dto.status());
         }
 
         Card saved = cardRepository.save(card);
@@ -162,15 +208,15 @@ public class CardService {
 
     private CardDTO toDto(Card card) {
         applyExpiredIfNeeded(card);
-        return CardDTO.builder()
-                .id(card.getId())
-                .panMasked(cardCryptoUtil.maskLast4(card.getPanLast4()))
-                .ownerName(card.getOwnerName())
-                .expiryMonth(card.getExpiryMonth())
-                .expiryYear(card.getExpiryYear())
-                .status(card.getStatus())
-                .balance(card.getBalance())
-                .build();
+        return new CardDTO(
+                card.getId(),
+                cardCryptoUtil.maskLast4(card.getPanLast4()),
+                card.getOwnerName(),
+                card.getExpiryMonth(),
+                card.getExpiryYear(),
+                card.getStatus(),
+                card.getBalance()
+        );
     }
 
     private void applyExpiredIfNeeded(Card card) {

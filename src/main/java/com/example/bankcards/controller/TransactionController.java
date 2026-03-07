@@ -3,6 +3,9 @@ package com.example.bankcards.controller;
 import com.example.bankcards.dto.PageResponseDTO;
 import com.example.bankcards.dto.TransactionDTO;
 import com.example.bankcards.dto.TransferDTO;
+import com.example.bankcards.dto.TopUpRequestDTO;
+import com.example.bankcards.dto.CardDTO;
+import com.example.bankcards.service.CardService;
 import com.example.bankcards.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,6 +21,13 @@ import org.springframework.web.bind.annotation.*;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final CardService cardService;
+
+    @PostMapping
+    @Operation(summary = "User: top up card balance (deposit)")
+    public ResponseEntity<CardDTO> topUp(@Valid @RequestBody TopUpRequestDTO dto) {
+        return ResponseEntity.ok(cardService.topUp(dto));
+    }
 
     @PostMapping("/transfer")
     @Operation(summary = "User: transfer between own cards")

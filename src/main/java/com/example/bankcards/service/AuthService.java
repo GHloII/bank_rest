@@ -24,15 +24,15 @@ public class AuthService {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
-                            request.getPassword()
+                            request.username(),
+                            request.password()
                     )
             );
 
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             String token = jwtService.generateToken(userPrincipal);
 
-            log.debug("User {} logged in successfully", request.getUsername());
+            log.debug("User {} logged in successfully", request.username());
 
             return LoginResponse.builder()
                     .token(token)
@@ -41,7 +41,7 @@ public class AuthService {
                     .build();
 
         } catch (AuthenticationException e) {
-            log.warn("Failed login attempt for user {}", request.getUsername());
+            log.warn("Failed login attempt for user {}", request.username());
             throw e;
         }
     }

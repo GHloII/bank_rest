@@ -1,16 +1,18 @@
 package com.example.bankcards.service;
 
+import com.example.bankcards.dto.TopUpRequestDTO;
 import com.example.bankcards.dto.CardDTO;
 import com.example.bankcards.dto.CardFilterDTO;
 import com.example.bankcards.dto.CreateCardDTO;
 import com.example.bankcards.dto.PageResponseDTO;
-import com.example.bankcards.dto.UpdateCardDTO;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.BadRequestException;
 import com.example.bankcards.exception.ConflictException;
 import com.example.bankcards.exception.NotFoundException;
 import com.example.bankcards.repository.CardRepository;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.UserPrincipal;
 import com.example.bankcards.util.CardCryptoUtil;
 import com.example.bankcards.util.CardExpiryUtil;
@@ -44,6 +46,9 @@ class CardServiceTest {
 
     @Mock
     private CardRepository cardRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private CardCryptoUtil cardCryptoUtil;
@@ -92,12 +97,12 @@ class CardServiceTest {
 
     @Test
     void createCardForUser_Success_EncryptsAndSaves() {
-        CreateCardDTO dto = CreateCardDTO.builder()
-                .pan("1111222233334444")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .build();
+        CreateCardDTO dto = new CreateCardDTO(
+                "1111222233334444",
+                "John Doe",
+                12,
+                2099
+        );
 
         when(cardCryptoUtil.last4("1111222233334444")).thenReturn("4444");
         when(cardCryptoUtil.encrypt("1111222233334444")).thenReturn("enc-pan");
@@ -113,20 +118,59 @@ class CardServiceTest {
         CardDTO result = cardService.createCardForUser(99L, dto);
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("John Doe", result.getOwnerName());
+        assertEquals(1L, result.id());
+        assertEquals("John Doe", result.ownerName());
         verify(cardRepository).save(any(Card.class));
         verify(cardCryptoUtil).encrypt("1111222233334444");
     }
 
     @Test
-    void createCardForUser_NullUserId_ThrowsBadRequest() {
-        CreateCardDTO dto = CreateCardDTO.builder()
-                .pan("1111222233334444")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
+    void createCardForUser_MissingOwnerName_AutofillsFromUser() {
+        CreateCardDTO dto = new CreateCardDTO(
+                "1111222233334444",
+                null,
+                12,
+                2099
+        );
+
+        when(cardCryptoUtil.last4("1111222233334444")).thenReturn("4444");
+        when(cardCryptoUtil.encrypt("1111222233334444")).thenReturn("enc-pan");
+
+        User user = User.builder()
+                .id(99L)
+                .username("user99")
+                .fullName("John Derived")
+                .email("u99@example.com")
+                .passwordHash("hash")
+                .enabled(true)
                 .build();
+        when(userRepository.findById(99L)).thenReturn(Optional.of(user));
+
+        when(cardRepository.save(any(Card.class))).thenAnswer(inv -> {
+            Card c = inv.getArgument(0);
+            c.setId(2L);
+            c.setPanLast4("4444");
+            return c;
+        });
+        when(cardCryptoUtil.maskLast4("4444")).thenReturn("**** **** **** 4444");
+        when(cardExpiryUtil.isExpired(12, 2099)).thenReturn(false);
+
+        CardDTO result = cardService.createCardForUser(99L, dto);
+
+        assertNotNull(result);
+        assertEquals(2L, result.id());
+        assertEquals("John Derived", result.ownerName());
+        verify(userRepository).findById(99L);
+    }
+
+    @Test
+    void createCardForUser_NullUserId_ThrowsBadRequest() {
+        CreateCardDTO dto = new CreateCardDTO(
+                "1111222233334444",
+                "John Doe",
+                12,
+                2099
+        );
 
         assertThrows(BadRequestException.class, () -> cardService.createCardForUser(null, dto));
         verify(cardRepository, never()).save(any());
@@ -148,11 +192,11 @@ class CardServiceTest {
             PageResponseDTO<CardDTO> result = cardService.getMyCards(filter);
 
             assertNotNull(result);
-            assertEquals(1, result.getContent().size());
-            assertEquals(0, result.getPage());
-            assertEquals(10, result.getSize());
-            assertEquals(1, result.getTotalElements());
-            assertEquals("**** **** **** 1234", result.getContent().get(0).getPanMasked());
+            assertEquals(1, result.content().size());
+            assertEquals(0, result.page());
+            assertEquals(10, result.size());
+            assertEquals(1, result.totalElements());
+            assertEquals("**** **** **** 1234", result.content().get(0).panMasked());
         }
     }
 
@@ -205,7 +249,7 @@ class CardServiceTest {
             CardDTO result = cardService.requestBlockMyCard(10L);
 
             assertNotNull(result);
-            assertEquals(CardStatus.BLOCKED, result.getStatus());
+            assertEquals(CardStatus.BLOCKED, result.status());
             verify(cardRepository, never()).save(any());
         }
     }
@@ -221,22 +265,20 @@ class CardServiceTest {
     }
 
     @Test
-    void updateCard_AdminUpdate_ChangesOwnerAndStatus() {
-        UpdateCardDTO dto = UpdateCardDTO.builder()
-                .ownerName("New")
-                .status(CardStatus.BLOCKED)
-                .build();
+    void topUp_ValidBody_ReturnsOk() {
+        TopUpRequestDTO dto = new TopUpRequestDTO(10L, new BigDecimal("50.00"));
 
-        when(cardRepository.findById(10L)).thenReturn(Optional.of(activeCard));
-        when(cardRepository.save(activeCard)).thenReturn(activeCard);
-        when(cardExpiryUtil.isExpired(activeCard.getExpiryMonth(), activeCard.getExpiryYear())).thenReturn(false);
-        when(cardCryptoUtil.maskLast4("1234")).thenReturn("**** **** **** 1234");
+        when(cardRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(activeCard));
+        when(cardRepository.save(any(Card.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(cardExpiryUtil.isExpired(anyInt(), anyInt())).thenReturn(false);
 
-        CardDTO result = cardService.updateCard(10L, dto);
+        try (MockedStatic<SecurityContextHolder> mocked = mockUserContext(1L)) {
+            CardDTO result = cardService.topUp(dto);
 
-        assertEquals("New", result.getOwnerName());
-        assertEquals(CardStatus.BLOCKED, result.getStatus());
-        verify(cardRepository).save(activeCard);
+            assertNotNull(result);
+            assertEquals(new BigDecimal("150.00"), activeCard.getBalance());
+            verify(cardRepository).save(activeCard);
+        }
     }
 
     @Test

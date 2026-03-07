@@ -8,9 +8,11 @@ import com.example.bankcards.dto.UpdateCardDTO;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.service.CardService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,7 +32,7 @@ public class CardController {
 
     @GetMapping("/me")
     @Operation(summary = "User: list my cards with filters and pagination")
-    public ResponseEntity<PageResponseDTO<CardDTO>> myCards(@ModelAttribute CardFilterDTO filter) {
+    public ResponseEntity<PageResponseDTO<CardDTO>> myCards(@ParameterObject @ModelAttribute CardFilterDTO filter) {
         return ResponseEntity.ok(cardService.getMyCards(filter));
     }
 
@@ -47,14 +49,25 @@ public class CardController {
     }
 
     @GetMapping("/admin/search")
-    @Operation(summary = "Admin: search cards with pagination")
-    public ResponseEntity<PageResponseDTO<CardDTO>> adminSearch(@RequestParam(required = false) Long userId,
-                                                                @RequestParam(required = false) CardStatus status,
-                                                                @RequestParam(required = false) String last4,
-                                                                @RequestParam(required = false) String ownerName,
-                                                                @RequestParam(required = false) Boolean includeDeleted,
-                                                                @RequestParam(required = false) Integer page,
-                                                                @RequestParam(required = false) Integer size) {
+    @Operation(
+            summary = "Admin: search cards with pagination",
+            description = "All query parameters are optional. If you pass no filters, this endpoint returns ALL cards (paginated)."
+    )
+    public ResponseEntity<PageResponseDTO<CardDTO>> adminSearch(
+            @Parameter(description = "Filter by user id. Omit to search across all users.", example = "1")
+            @RequestParam(required = false) Long userId,
+            @Parameter(description = "Filter by card status. Omit to include any status.", example = "ACTIVE")
+            @RequestParam(required = false) CardStatus status,
+            @Parameter(description = "Filter by exact last 4 digits of PAN. Omit to include any.", example = "4444")
+            @RequestParam(required = false) String last4,
+            @Parameter(description = "Filter by owner name substring (case-insensitive). Omit to include any.", example = "john")
+            @RequestParam(required = false) String ownerName,
+            @Parameter(description = "Include soft-deleted cards. Default: false.", example = "false")
+            @RequestParam(required = false) Boolean includeDeleted,
+            @Parameter(description = "Page number (0-based). Default: 0.", example = "0")
+            @RequestParam(required = false) Integer page,
+            @Parameter(description = "Page size (1..100). Default: 10.", example = "10")
+            @RequestParam(required = false) Integer size) {
         return ResponseEntity.ok(cardService.searchAdminCards(userId, status, last4, ownerName, includeDeleted, page, size));
     }
 

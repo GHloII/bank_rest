@@ -28,38 +28,38 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     Page<Card> findByUserIdAndDeletedAtIsNull(@Param("userId") Long userId, Pageable pageable);
 
     // User cards search with pagination (only own, non-deleted). Filters are optional.
-    @Query("""
-            select c from Card c
-            where c.userId = :userId
-              and c.deletedAt is null
-              and (:status is null or c.status = :status)
-              and (:last4 is null or c.panLast4 = :last4)
-              and (:ownerName is null or lower(c.ownerName) like lower(concat('%', :ownerName, '%')))
-            """)
+    @Query(value = """
+            SELECT * FROM cards
+            WHERE (:userId IS NULL OR user_id = :userId)
+              AND deleted_at IS NULL
+              AND (:status IS NULL OR status = :status)
+              AND (:last4 IS NULL OR pan_last4 = :last4)
+              AND (:ownerName IS NULL OR lower(owner_name) LIKE lower(concat('%', cast(:ownerName as text), '%')))
+            """, nativeQuery = true)
     Page<Card> searchUserCards(
             @Param("userId") Long userId,
-            @Param("status") CardStatus status,
+            @Param("status") String status,
             @Param("last4") String last4,
             @Param("ownerName") String ownerName,
             Pageable pageable
     );
 
     // for admin: all cards including deleted 
-    @Query("select c from Card c where (:ownerName is null or lower(c.ownerName) like lower(concat('%', :ownerName, '%')))")
+    @Query(value = "SELECT * FROM cards WHERE (:ownerName IS NULL OR lower(owner_name) LIKE lower(concat('%', cast(:ownerName as text), '%')))", nativeQuery = true)
     Page<Card> findAllByOwnerNameContaining(@Param("ownerName") String ownerName, Pageable pageable); // (admin)
 
     // Admin cards search with pagination. includeDeleted=true will return soft-deleted cards too.
-    @Query("""
-            select c from Card c
-            where (:userId is null or c.userId = :userId)
-              and (:status is null or c.status = :status)
-              and (:last4 is null or c.panLast4 = :last4)
-              and (:ownerName is null or lower(c.ownerName) like lower(concat('%', :ownerName, '%')))
-              and (:includeDeleted = true or c.deletedAt is null)
-            """)
+    @Query(value = """
+            SELECT * FROM cards
+            WHERE (:userId IS NULL OR user_id = :userId)
+              AND (:status IS NULL OR status = :status)
+              AND (:last4 IS NULL OR pan_last4 = :last4)
+              AND (:ownerName IS NULL OR lower(owner_name) LIKE lower(concat('%', cast(:ownerName as text), '%')))
+              AND (:includeDeleted = true OR deleted_at IS NULL)
+            """, nativeQuery = true)
     Page<Card> searchAdminCards(
             @Param("userId") Long userId,
-            @Param("status") CardStatus status,
+            @Param("status") String status,
             @Param("last4") String last4,
             @Param("ownerName") String ownerName,
             @Param("includeDeleted") boolean includeDeleted,

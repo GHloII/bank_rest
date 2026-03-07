@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 11
+      author: author
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: "1"
+            sql: |
+              SELECT CASE
+                WHEN EXISTS (
+                  SELECT 1
+                  FROM information_schema.columns
+                  WHERE table_schema = 'public'
+                    AND table_name = 'cards'
+                    AND column_name = 'owner_name'
+                    AND (udt_name = 'bytea' OR data_type = 'bytea')
+                ) THEN 1 ELSE 0 END;
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              ALTER TABLE public.cards
+                ALTER COLUMN owner_name
+                TYPE VARCHAR(100)
+                USING encode(owner_name, 'escape');

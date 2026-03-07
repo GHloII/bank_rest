@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: '3.0.3'
 info:
   title: Bank Card Management API
   version: "1.0"
@@ -49,7 +49,7 @@ paths:
         - Cards
       summary: Admin - create card for user
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: userId
@@ -89,7 +89,7 @@ paths:
         - Cards
       summary: User - list my cards with filters and pagination
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: status
@@ -137,7 +137,7 @@ paths:
         - Cards
       summary: User - get my card by id
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -171,7 +171,7 @@ paths:
         - Users
       summary: User - get my profile
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       responses:
         '200':
           description: OK
@@ -187,12 +187,69 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 
   /users/admin:
+    post:
+      tags:
+        - Users
+      summary: Admin - create user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: password
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: fullName
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: enabled
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDTO'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
     get:
       tags:
         - Users
       summary: Admin - list all users
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: page
@@ -233,7 +290,7 @@ paths:
         - Users
       summary: Admin - search users by username/email
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: q
@@ -279,7 +336,7 @@ paths:
         - Users
       summary: Admin - list users by role name
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: roleName
@@ -326,7 +383,7 @@ paths:
         - Users
       summary: Admin - get user by id
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -365,7 +422,7 @@ paths:
         - Users
       summary: Admin - update user (email/fullName/enabled)
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -373,12 +430,21 @@ paths:
           schema:
             type: integer
             format: int64
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateUserDTO'
+        - in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: fullName
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: enabled
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: OK
@@ -416,7 +482,7 @@ paths:
         - Users
       summary: Admin - delete user
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -452,7 +518,7 @@ paths:
         - Cards
       summary: User - request card blocking
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -497,49 +563,64 @@ paths:
       tags:
         - Cards
       summary: Admin - search cards with pagination
+      description: All query parameters are optional. If you pass no filters, this endpoint returns ALL cards (paginated).
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: userId
           required: false
+          description: Filter by user id. Omit to search across all users.
           schema:
             type: integer
             format: int64
+          example: 1
         - in: query
           name: status
           required: false
+          description: Filter by card status. Omit to include any status.
           schema:
             $ref: '#/components/schemas/CardStatus'
+          example: ACTIVE
         - in: query
           name: last4
           required: false
+          description: Filter by exact last 4 digits of PAN. Omit to include any.
           schema:
             type: string
             pattern: '^\\d{4}$'
+          example: '4444'
         - in: query
           name: ownerName
           required: false
+          description: Filter by owner name substring (case-insensitive). Omit to include any.
           schema:
             type: string
+          example: 'john'
         - in: query
           name: includeDeleted
           required: false
+
           schema:
             type: boolean
+          example: false
         - in: query
           name: page
           required: false
+
           schema:
             type: integer
             minimum: 0
+          example: 0
         - in: query
           name: size
           required: false
+
           schema:
             type: integer
             minimum: 1
             maximum: 100
+          example: 10
       responses:
         '200':
           description: OK
@@ -566,7 +647,7 @@ paths:
         - Cards
       summary: Admin - update card (ownerName/status)
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -605,7 +686,7 @@ paths:
         - Cards
       summary: Admin - soft delete card
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -629,13 +710,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /transactions:
+    post:
+      tags:
+        - Transactions
+      summary: User - top up card balance (deposit)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopUpRequestDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDTO'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /transactions/transfer:
     post:
       tags:
         - Transactions
       summary: User - transfer between own cards
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -674,7 +800,7 @@ paths:
         - Transactions
       summary: User - my transactions history
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: query
           name: page
@@ -709,7 +835,7 @@ paths:
         - Transactions
       summary: User - my transactions by card
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       parameters:
         - in: path
           name: cardId
@@ -812,23 +938,30 @@ components:
       type: object
       required:
         - pan
-        - ownerName
         - expiryMonth
         - expiryYear
       properties:
         pan:
           type: string
           pattern: '^\\d{16}$'
+          description: Primary account number (PAN). 16 digits.
+          example: '1111222233334444'
         ownerName:
           type: string
           maxLength: 100
+          description: Card owner name (optional). If empty, it will be derived from user profile.
+          example: John Doe
         expiryMonth:
           type: integer
           minimum: 1
           maximum: 12
+          description: Expiry month (1..12)
+          example: 12
         expiryYear:
           type: integer
           minimum: 2000
+          description: Expiry year (>= 2000)
+          example: 2099
 
     UpdateCardDTO:
       type: object
@@ -845,21 +978,29 @@ components:
         id:
           type: integer
           format: int64
+          example: 101
         panMasked:
           type: string
+          description: Masked card number showing only last 4 digits.
           example: '**** **** **** 1234'
         ownerName:
           type: string
+          description: Name of the card holder.
+          example: 'John Doe'
         expiryMonth:
           type: integer
+          description: Card expiry month (1-12).
+          example: 12
         expiryYear:
           type: integer
+          description: Card expiry year.
+          example: 2028
         status:
           $ref: '#/components/schemas/CardStatus'
         balance:
           type: string
-          description: BigDecimal
-          example: '1000.00'
+          description: Current balance of the card (BigDecimal).
+          example: '1250.50'
 
     PageCardDTO:
       type: object
@@ -892,6 +1033,32 @@ components:
         - SUCCESS
         - FAILED
 
+    TransactionRequestDTO:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: string
+          description: BigDecimal
+          example: '100.00'
+
+    TopUpRequestDTO:
+      type: object
+      required:
+        - cardId
+        - amount
+      properties:
+        cardId:
+          type: integer
+          format: int64
+          description: ID of the card to top up.
+          example: 101
+        amount:
+          type: string
+          description: Amount to deposit (BigDecimal). Must be at least 0.01.
+          example: '100.00'
+
     TransferDTO:
       type: object
       required:
@@ -903,17 +1070,23 @@ components:
         fromCardId:
           type: integer
           format: int64
+          description: Source card ID.
+          example: 101
         toCardId:
           type: integer
           format: int64
+          description: Target card ID.
+          example: 102
         amount:
           type: string
-          description: BigDecimal
-          example: '10.00'
+          description: Amount to transfer (BigDecimal).
+          example: '50.00'
         idempotencyKey:
           type: string
           maxLength: 100
           pattern: '^[a-zA-Z0-9_-]+$'
+          description: Unique key to prevent duplicate transfers.
+          example: 'req-abc-123'
 
     TransactionDTO:
       type: object
@@ -921,16 +1094,21 @@ components:
         id:
           type: integer
           format: int64
+          example: 501
         fromCardId:
           type: integer
           format: int64
+          description: Source card ID (null for deposits).
+          example: 101
         toCardId:
           type: integer
           format: int64
+          description: Target card ID (null for withdrawals).
+          example: 102
         amount:
           type: string
-          description: BigDecimal
-          example: '10.00'
+          description: Transaction amount (BigDecimal).
+          example: '50.00'
         type:
           $ref: '#/components/schemas/TransactionType'
         status:
@@ -938,6 +1116,7 @@ components:
         createdAt:
           type: string
           format: date-time
+          example: '2024-03-07T22:00:00Z'
 
     PageTransactionDTO:
       type: object
@@ -956,6 +1135,41 @@ components:
         totalPages:
           type: integer
 
+    CreateUserDTO:
+      type: object
+      required:
+        - username
+        - password
+        - email
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: Unique username for the user. Only letters, numbers and underscores allowed.
+          example: 'john_doe123'
+        password:
+          type: string
+          minLength: 6
+          description: User password (min 6 characters).
+          example: 'secret123'
+        email:
+          type: string
+          format: email
+          maxLength: 100
+          description: User email address.
+          example: 'john.doe@example.com'
+        fullName:
+          type: string
+          maxLength: 100
+          description: Optional full name of the user.
+          example: 'John Doe'
+        enabled:
+          type: boolean
+          description: Whether the user account is enabled.
+          example: true
+
     UpdateUserDTO:
       type: object
       properties:
@@ -963,11 +1177,17 @@ components:
           type: string
           format: email
           maxLength: 100
+          description: New email address.
+          example: 'new.email@example.com'
         fullName:
           type: string
           maxLength: 100
+          description: New full name.
+          example: 'John Q. Doe'
         enabled:
           type: boolean
+          description: Set user status (active/inactive).
+          example: true
 
     UserDTO:
       type: object
@@ -975,14 +1195,19 @@ components:
         id:
           type: integer
           format: int64
+          example: 1
         username:
           type: string
+          example: 'john_doe123'
         email:
           type: string
+          example: 'john.doe@example.com'
         fullName:
           type: string
+          example: 'John Doe'
         enabled:
           type: boolean
+          example: true
         roles:
           type: array
           items:
