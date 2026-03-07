@@ -2,17 +2,13 @@ package com.example.bankcards.dto;
 
 import com.example.bankcards.entity.CardStatus;
 import jakarta.validation.constraints.Size;
-import lombok.*;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+import lombok.Builder;
+
 @Builder
-public class UpdateCardDTO {
-    
+public record UpdateCardDTO(
     @Size(max = 100, message = "Owner name must not exceed 100 characters")
-    private String ownerName;
+    String ownerName,
     
-    private CardStatus status;
-}
+    CardStatus status
+) {}

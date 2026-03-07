@@ -42,9 +42,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        request = new LoginRequest();
-        request.setUsername("user");
-        request.setPassword("pass");
+        request = new LoginRequest("user", "pass");
 
         principal = new UserPrincipal(
                 1L,
@@ -63,9 +61,9 @@ class AuthServiceTest {
         LoginResponse response = authService.login(request);
 
         assertNotNull(response);
-        assertEquals("jwt", response.getToken());
-        assertEquals(1L, response.getId());
-        assertEquals("user", response.getUsername());
+        assertEquals("jwt", response.token());
+        assertEquals(1L, response.id());
+        assertEquals("user", response.username());
 
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(jwtService).generateToken(principal);

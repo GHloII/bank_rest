@@ -23,7 +23,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Authenticate user and return JWT token")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login attempt for user: {}", request.getUsername());
+        log.info("Login attempt for user: {}", request.username());
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }

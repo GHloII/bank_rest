@@ -54,25 +54,25 @@ class CardControllerTest {
 
     @BeforeEach
     void setUp() {
-        cardDTO = CardDTO.builder()
-                .id(1L)
-                .panMasked("**** **** **** 1234")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .status(CardStatus.ACTIVE)
-                .balance(new BigDecimal("100.00"))
-                .build();
+        cardDTO = new CardDTO(
+                1L,
+                "**** **** **** 1234",
+                "John Doe",
+                12,
+                2099,
+                CardStatus.ACTIVE,
+                new BigDecimal("100.00")
+        );
     }
 
     @Test
     void createForUser_ValidBody_ReturnsOk() throws Exception {
-        CreateCardDTO dto = CreateCardDTO.builder()
-                .pan("1111222233334444")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .build();
+        CreateCardDTO dto = new CreateCardDTO(
+                "1111222233334444",
+                "John Doe",
+                12,
+                2099
+        );
 
         when(cardService.createCardForUser(eq(1L), any(CreateCardDTO.class))).thenReturn(cardDTO);
 
@@ -89,12 +89,12 @@ class CardControllerTest {
 
     @Test
     void createForUser_InvalidBody_ReturnsBadRequest() throws Exception {
-        CreateCardDTO dto = CreateCardDTO.builder()
-                .pan("")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .build();
+        CreateCardDTO dto = new CreateCardDTO(
+                "",
+                "John Doe",
+                12,
+                2099
+        );
 
         mockMvc.perform(post("/cards/admin")
                         .param("userId", "1")
@@ -132,15 +132,15 @@ class CardControllerTest {
 
     @Test
     void requestBlock_ReturnsOk() throws Exception {
-        CardDTO blocked = CardDTO.builder()
-                .id(1L)
-                .panMasked("**** **** **** 1234")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .status(CardStatus.BLOCKED)
-                .balance(new BigDecimal("100.00"))
-                .build();
+        CardDTO blocked = new CardDTO(
+                1L,
+                "**** **** **** 1234",
+                "John Doe",
+                12,
+                2099,
+                CardStatus.BLOCKED,
+                new BigDecimal("100.00")
+        );
         when(cardService.requestBlockMyCard(1L)).thenReturn(blocked);
 
         mockMvc.perform(post("/cards/me/1/block-request"))
@@ -152,10 +152,10 @@ class CardControllerTest {
 
     @Test
     void update_ValidBody_ReturnsOk() throws Exception {
-        UpdateCardDTO dto = UpdateCardDTO.builder()
-                .ownerName("New")
-                .status(CardStatus.BLOCKED)
-                .build();
+        UpdateCardDTO dto = new UpdateCardDTO(
+                "New",
+                CardStatus.BLOCKED
+        );
 
         when(cardService.updateCard(eq(1L), any(UpdateCardDTO.class))).thenReturn(cardDTO);
 

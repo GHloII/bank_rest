@@ -33,25 +33,25 @@ public class UserService {
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public UserDTO createUser(CreateUserDTO dto) {
-        log.debug("Admin creating user with username: {}", dto != null ? dto.getUsername() : null);
+        log.debug("Admin creating user with username: {}", dto != null ? dto.username() : null);
 
         if (dto == null) {
             throw new BadRequestException("Create payload is required");
         }
-        if (dto.getUsername() == null || dto.getUsername().isBlank()) {
+        if (dto.username() == null || dto.username().isBlank()) {
             throw new BadRequestException("Username is required");
         }
-        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+        if (dto.password() == null || dto.password().isBlank()) {
             throw new BadRequestException("Password is required");
         }
-        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+        if (dto.email() == null || dto.email().isBlank()) {
             throw new BadRequestException("Email is required");
         }
 
-        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+        if (userRepository.findByUsername(dto.username()).isPresent()) {
             throw new BadRequestException("Username already exists");
         }
-        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(dto.email()).isPresent()) {
             throw new BadRequestException("Email already exists");
         }
 
@@ -59,10 +59,10 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("Role not found: ROLE_USER"));
 
         User user = User.builder()
-                .username(dto.getUsername())
-                .passwordHash(passwordEncoder.encode(dto.getPassword()))
-                .email(dto.getEmail())
-                .fullName(dto.getFullName())
+                .username(dto.username())
+                .passwordHash(passwordEncoder.encode(dto.password()))
+                .email(dto.email())
+                .fullName(dto.fullName())
                 .enabled(true)
                 .build();
         user.getRoles().add(userRole);
@@ -125,14 +125,14 @@ public class UserService {
             throw new BadRequestException("Update payload is required");
         }
 
-        if (updatedUser.getEmail() != null) {
-            existing.setEmail(updatedUser.getEmail());
+        if (updatedUser.email() != null) {
+            existing.setEmail(updatedUser.email());
         }
-        if (updatedUser.getFullName() != null) {
-            existing.setFullName(updatedUser.getFullName());
+        if (updatedUser.fullName() != null) {
+            existing.setFullName(updatedUser.fullName());
         }
-        if (updatedUser.getEnabled() != null) {
-            existing.setEnabled(updatedUser.getEnabled());
+        if (updatedUser.enabled() != null) {
+            existing.setEnabled(updatedUser.enabled());
         }
 
         User saved = userRepository.save(existing);
@@ -159,14 +159,14 @@ public class UserService {
     }
 
     private UserDTO toDto(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .enabled(user.getEnabled())
-                .roles(user.getRoles() == null ? java.util.Set.of() : user.getRoles().stream().map(r -> r.getName()).collect(java.util.stream.Collectors.toSet()))
-                .build();
+        return new UserDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getEnabled(),
+                user.getRoles() == null ? java.util.Set.of() : user.getRoles().stream().map(r -> r.getName()).collect(java.util.stream.Collectors.toSet())
+        );
     }
 
     private String getCurrentUsername() {

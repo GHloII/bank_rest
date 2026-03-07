@@ -3,6 +3,7 @@ package com.example.bankcards.controller;
 import com.example.bankcards.dto.CardDTO;
 import com.example.bankcards.dto.CardFilterDTO;
 import com.example.bankcards.dto.CreateCardDTO;
+import com.example.bankcards.dto.DepositDTO;
 import com.example.bankcards.dto.PageResponseDTO;
 import com.example.bankcards.dto.UpdateCardDTO;
 import com.example.bankcards.entity.CardStatus;
@@ -10,9 +11,9 @@ import com.example.bankcards.service.CardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springdoc.core.annotations.ParameterObject;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +24,12 @@ import org.springframework.web.bind.annotation.*;
 public class CardController {
 
     private final CardService cardService;
+
+    @PostMapping("/me/{cardId}/deposit")
+    @Operation(summary = "User: deposit money to card from air")
+    public ResponseEntity<CardDTO> deposit(@PathVariable Long cardId, @Valid @RequestBody DepositDTO dto) {
+        return ResponseEntity.ok(cardService.deposit(cardId, dto));
+    }
 
     @PostMapping("/admin")
     @Operation(summary = "Admin: create card for user")

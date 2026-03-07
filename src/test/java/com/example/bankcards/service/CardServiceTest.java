@@ -97,12 +97,12 @@ class CardServiceTest {
 
     @Test
     void createCardForUser_Success_EncryptsAndSaves() {
-        CreateCardDTO dto = CreateCardDTO.builder()
-                .pan("1111222233334444")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .build();
+        CreateCardDTO dto = new CreateCardDTO(
+                "1111222233334444",
+                "John Doe",
+                12,
+                2099
+        );
 
         when(cardCryptoUtil.last4("1111222233334444")).thenReturn("4444");
         when(cardCryptoUtil.encrypt("1111222233334444")).thenReturn("enc-pan");
@@ -118,20 +118,20 @@ class CardServiceTest {
         CardDTO result = cardService.createCardForUser(99L, dto);
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("John Doe", result.getOwnerName());
+        assertEquals(1L, result.id());
+        assertEquals("John Doe", result.ownerName());
         verify(cardRepository).save(any(Card.class));
         verify(cardCryptoUtil).encrypt("1111222233334444");
     }
 
     @Test
     void createCardForUser_MissingOwnerName_AutofillsFromUser() {
-        CreateCardDTO dto = CreateCardDTO.builder()
-                .pan("1111222233334444")
-                .ownerName(null)
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .build();
+        CreateCardDTO dto = new CreateCardDTO(
+                "1111222233334444",
+                null,
+                12,
+                2099
+        );
 
         when(cardCryptoUtil.last4("1111222233334444")).thenReturn("4444");
         when(cardCryptoUtil.encrypt("1111222233334444")).thenReturn("enc-pan");
@@ -158,19 +158,19 @@ class CardServiceTest {
         CardDTO result = cardService.createCardForUser(99L, dto);
 
         assertNotNull(result);
-        assertEquals(2L, result.getId());
-        assertEquals("John Derived", result.getOwnerName());
+        assertEquals(2L, result.id());
+        assertEquals("John Derived", result.ownerName());
         verify(userRepository).findById(99L);
     }
 
     @Test
     void createCardForUser_NullUserId_ThrowsBadRequest() {
-        CreateCardDTO dto = CreateCardDTO.builder()
-                .pan("1111222233334444")
-                .ownerName("John Doe")
-                .expiryMonth(12)
-                .expiryYear(2099)
-                .build();
+        CreateCardDTO dto = new CreateCardDTO(
+                "1111222233334444",
+                "John Doe",
+                12,
+                2099
+        );
 
         assertThrows(BadRequestException.class, () -> cardService.createCardForUser(null, dto));
         verify(cardRepository, never()).save(any());
@@ -192,11 +192,11 @@ class CardServiceTest {
             PageResponseDTO<CardDTO> result = cardService.getMyCards(filter);
 
             assertNotNull(result);
-            assertEquals(1, result.getContent().size());
-            assertEquals(0, result.getPage());
-            assertEquals(10, result.getSize());
-            assertEquals(1, result.getTotalElements());
-            assertEquals("**** **** **** 1234", result.getContent().get(0).getPanMasked());
+            assertEquals(1, result.content().size());
+            assertEquals(0, result.page());
+            assertEquals(10, result.size());
+            assertEquals(1, result.totalElements());
+            assertEquals("**** **** **** 1234", result.content().get(0).panMasked());
         }
     }
 
@@ -249,7 +249,7 @@ class CardServiceTest {
             CardDTO result = cardService.requestBlockMyCard(10L);
 
             assertNotNull(result);
-            assertEquals(CardStatus.BLOCKED, result.getStatus());
+            assertEquals(CardStatus.BLOCKED, result.status());
             verify(cardRepository, never()).save(any());
         }
     }
@@ -266,10 +266,10 @@ class CardServiceTest {
 
     @Test
     void updateCard_AdminUpdate_ChangesOwnerAndStatus() {
-        UpdateCardDTO dto = UpdateCardDTO.builder()
-                .ownerName("New")
-                .status(CardStatus.BLOCKED)
-                .build();
+        UpdateCardDTO dto = new UpdateCardDTO(
+                "New",
+                CardStatus.BLOCKED
+        );
 
         when(cardRepository.findById(10L)).thenReturn(Optional.of(activeCard));
         when(cardRepository.save(activeCard)).thenReturn(activeCard);
@@ -278,8 +278,8 @@ class CardServiceTest {
 
         CardDTO result = cardService.updateCard(10L, dto);
 
-        assertEquals("New", result.getOwnerName());
-        assertEquals(CardStatus.BLOCKED, result.getStatus());
+        assertEquals("New", result.ownerName());
+        assertEquals(CardStatus.BLOCKED, result.status());
         verify(cardRepository).save(activeCard);
     }
 

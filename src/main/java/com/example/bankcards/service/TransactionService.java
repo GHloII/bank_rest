@@ -44,37 +44,37 @@ public class TransactionService {
     public TransactionDTO transfer(TransferDTO dto) {
         Long userId = getCurrentUserId();
 
-        if (dto.getFromCardId().equals(dto.getToCardId())) {
+        if (dto.fromCardId().equals(dto.toCardId())) {
             throw new BadRequestException("From card and to card must be different");
         }
 
-        Transaction existing = transactionRepository.findByIdempotencyKey(dto.getIdempotencyKey()).orElse(null);
+        Transaction existing = transactionRepository.findByIdempotencyKey(dto.idempotencyKey()).orElse(null);
         if (existing != null) {
             ensureTransactionBelongsToUser(existing, userId);
             return toDto(existing);
         }
 
         Transaction tx = Transaction.builder()
-                .fromCardId(dto.getFromCardId())
-                .toCardId(dto.getToCardId())
-                .amount(dto.getAmount())
+                .fromCardId(dto.fromCardId())
+                .toCardId(dto.toCardId())
+                .amount(dto.amount())
                 .type(TransactionType.TRANSFER)
                 .status(TransactionStatus.PENDING)
-                .idempotencyKey(dto.getIdempotencyKey())
+                .idempotencyKey(dto.idempotencyKey())
                 .build();
 
         try {
             tx = transactionRepository.save(tx);
         } catch (DataIntegrityViolationException e) {
-            Transaction raced = transactionRepository.findByIdempotencyKey(dto.getIdempotencyKey())
+            Transaction raced = transactionRepository.findByIdempotencyKey(dto.idempotencyKey())
                     .orElseThrow(() -> new ConflictException("Idempotency key conflict"));
             ensureTransactionBelongsToUser(raced, userId);
             return toDto(raced);
         }
 
-        Card from = cardRepository.findByIdAndUserId(dto.getFromCardId(), userId)
+        Card from = cardRepository.findByIdAndUserId(dto.fromCardId(), userId)
                 .orElseThrow(() -> new NotFoundException("From card not found"));
-        Card to = cardRepository.findByIdAndUserId(dto.getToCardId(), userId)
+        Card to = cardRepository.findByIdAndUserId(dto.toCardId(), userId)
                 .orElseThrow(() -> new NotFoundException("To card not found"));
 
         applyExpiredIfNeeded(from);
@@ -83,7 +83,7 @@ public class TransactionService {
         validateCardForTransfer(from, "From");
         validateCardForTransfer(to, "To");
 
-        BigDecimal amount = dto.getAmount();
+        BigDecimal amount = dto.amount();
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Amount must be greater than 0");
         }
@@ -171,15 +171,15 @@ public class TransactionService {
     }
 
     private TransactionDTO toDto(Transaction tx) {
-        return TransactionDTO.builder()
-                .id(tx.getId())
-                .fromCardId(tx.getFromCardId())
-                .toCardId(tx.getToCardId())
-                .amount(tx.getAmount())
-                .type(tx.getType())
-                .status(tx.getStatus())
-                .createdAt(tx.getCreatedAt())
-                .build();
+        return new TransactionDTO(
+                tx.getId(),
+                tx.getFromCardId(),
+                tx.getToCardId(),
+                tx.getAmount(),
+                tx.getType(),
+                tx.getStatus(),
+                tx.getCreatedAt()
+        );
     }
 
     private Long getCurrentUserId() {

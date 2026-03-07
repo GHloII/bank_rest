@@ -121,7 +121,7 @@ class TransactionServiceTest {
                 .id(100L)
                 .fromCardId(1L)
                 .toCardId(2L)
-                .amount(dto.getAmount())
+                .amount(dto.amount())
                 .type(TransactionType.TRANSFER)
                 .status(TransactionStatus.PENDING)
                 .idempotencyKey("k1")
@@ -132,7 +132,7 @@ class TransactionServiceTest {
                 .id(100L)
                 .fromCardId(1L)
                 .toCardId(2L)
-                .amount(dto.getAmount())
+                .amount(dto.amount())
                 .type(TransactionType.TRANSFER)
                 .status(TransactionStatus.SUCCESS)
                 .idempotencyKey("k1")
@@ -154,7 +154,7 @@ class TransactionServiceTest {
             TransactionDTO result = transactionService.transfer(dto);
 
             assertNotNull(result);
-            assertEquals(TransactionStatus.SUCCESS, result.getStatus());
+            assertEquals(TransactionStatus.SUCCESS, result.status());
 
             assertEquals(new BigDecimal("90.00"), from.getBalance());
             assertEquals(new BigDecimal("60.00"), to.getBalance());
@@ -192,7 +192,7 @@ class TransactionServiceTest {
                 .id(100L)
                 .fromCardId(1L)
                 .toCardId(2L)
-                .amount(dto.getAmount())
+                .amount(dto.amount())
                 .type(TransactionType.TRANSFER)
                 .status(TransactionStatus.PENDING)
                 .idempotencyKey("k1")
@@ -227,7 +227,7 @@ class TransactionServiceTest {
                 .id(55L)
                 .fromCardId(1L)
                 .toCardId(2L)
-                .amount(dto.getAmount())
+                .amount(dto.amount())
                 .type(TransactionType.TRANSFER)
                 .status(TransactionStatus.SUCCESS)
                 .idempotencyKey("k1")
@@ -241,7 +241,7 @@ class TransactionServiceTest {
 
             TransactionDTO result = transactionService.transfer(dto);
 
-            assertEquals(55L, result.getId());
+            assertEquals(55L, result.id());
             verify(transactionRepository, never()).save(argThat(t -> t.getId() == null));
         }
     }
@@ -259,7 +259,7 @@ class TransactionServiceTest {
                 .id(77L)
                 .fromCardId(1L)
                 .toCardId(2L)
-                .amount(dto.getAmount())
+                .amount(dto.amount())
                 .type(TransactionType.TRANSFER)
                 .status(TransactionStatus.SUCCESS)
                 .idempotencyKey("k1")
@@ -275,7 +275,7 @@ class TransactionServiceTest {
 
             TransactionDTO result = transactionService.transfer(dto);
 
-            assertEquals(77L, result.getId());
+            assertEquals(77L, result.id());
         }
     }
 
@@ -300,7 +300,7 @@ class TransactionServiceTest {
 
             PageResponseDTO<TransactionDTO> result = transactionService.myTransactions(0, 10);
 
-            assertEquals(1, result.getContent().size());
+            assertEquals(1, result.content().size());
         }
     }
 

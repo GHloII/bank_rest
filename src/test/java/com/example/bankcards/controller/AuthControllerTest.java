@@ -49,9 +49,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        request = new LoginRequest();
-        request.setUsername("user");
-        request.setPassword("pass");
+        request = new LoginRequest("user", "pass");
     }
 
     @Test
@@ -76,9 +74,7 @@ class AuthControllerTest {
 
     @Test
     void login_InvalidBody_ReturnsBadRequest() throws Exception {
-        LoginRequest invalid = new LoginRequest();
-        invalid.setUsername("");
-        invalid.setPassword("pass");
+        LoginRequest invalid = new LoginRequest("", "pass");
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
