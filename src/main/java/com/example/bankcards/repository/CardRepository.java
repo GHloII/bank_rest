@@ -23,11 +23,9 @@ public interface CardRepository extends JpaRepository<Card, Long> {
 
     Optional<Card> findByPanLast4AndUserId(String last4, Long userId);
 
-    // soft-delete: only non-deleted cards
     @Query("select c from Card c where c.userId = :userId and c.deletedAt is null")
     Page<Card> findByUserIdAndDeletedAtIsNull(@Param("userId") Long userId, Pageable pageable);
 
-    // User cards search with pagination (only own, non-deleted). Filters are optional.
     @Query(value = """
             SELECT * FROM cards
             WHERE (:userId IS NULL OR user_id = :userId)
@@ -44,11 +42,9 @@ public interface CardRepository extends JpaRepository<Card, Long> {
             Pageable pageable
     );
 
-    // for admin: all cards including deleted 
     @Query(value = "SELECT * FROM cards WHERE (:ownerName IS NULL OR lower(owner_name) LIKE lower(concat('%', cast(:ownerName as text), '%')))", nativeQuery = true)
-    Page<Card> findAllByOwnerNameContaining(@Param("ownerName") String ownerName, Pageable pageable); // (admin)
+    Page<Card> findAllByOwnerNameContaining(@Param("ownerName") String ownerName, Pageable pageable);
 
-    // Admin cards search with pagination. includeDeleted=true will return soft-deleted cards too.
     @Query(value = """
             SELECT * FROM cards
             WHERE (:userId IS NULL OR user_id = :userId)
@@ -64,7 +60,7 @@ public interface CardRepository extends JpaRepository<Card, Long> {
             @Param("ownerName") String ownerName,
             @Param("includeDeleted") boolean includeDeleted,
             Pageable pageable
-    ); // (admin)
+    );
 
-    Page<Card> findAll(Pageable pageable); // (admin)
+    Page<Card> findAll(Pageable pageable);
 }

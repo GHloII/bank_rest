@@ -18,15 +18,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     Optional<Transaction> findByIdempotencyKey(String idempotencyKey);
 
-    // transaction history for a specific card 
     @Query("select t from Transaction t where t.fromCardId = :cardId or t.toCardId = :cardId order by t.createdAt desc")
     List<Transaction> findByCardIdOrderByCreatedAtDesc(@Param("cardId") Long cardId);
 
-    // paginated transaction history for a card
     @Query("select t from Transaction t where t.fromCardId = :cardId or t.toCardId = :cardId order by t.createdAt desc")
     Page<Transaction> findByCardIdOrderByCreatedAtDesc(@Param("cardId") Long cardId, Pageable pageable);
 
-    // transaction history for a user 
     @Query("""
             select t from Transaction t
             join Card cFrom on t.fromCardId = cFrom.id
@@ -36,7 +33,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             """)
     Page<Transaction> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 
-    // check that transaction belongs to user 
     @Query("""
             select t from Transaction t
             join Card cFrom on t.fromCardId = cFrom.id
@@ -45,15 +41,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             """)
     Optional<Transaction> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
 
-    // transactions with given status 
     List<Transaction> findByStatus(TransactionStatus status);
 
-    // transactions with given status (admin)
-    Page<Transaction> findByStatus(TransactionStatus status, Pageable pageable); // (admin)
+    Page<Transaction> findByStatus(TransactionStatus status, Pageable pageable);
 
-    // transactions with given type (admin)
-    Page<Transaction> findByType(TransactionType type, Pageable pageable); // (admin)
+    Page<Transaction> findByType(TransactionType type, Pageable pageable);
 
-    // All transactions 
-    Page<Transaction> findAll(Pageable pageable); // (admin)
+    Page<Transaction> findAll(Pageable pageable);
 }
